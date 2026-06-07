@@ -1,0 +1,26 @@
+# -----------------------------------------------
+# Editing anything in this file and pushing to Git
+# will trigger ArgoCD to sync the cluster.
+# -----------------------------------------------
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: "1.27"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+config:
+  message: "Hello from GitOps v1"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi

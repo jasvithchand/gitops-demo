@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-app
+  namespace: argocd
+spec:
+  project: default
+
+  # Where to pull the chart from
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/gitops-demo   # <-- change this
+    targetRevision: HEAD
+    path: nginx-app
+
+  # Where to deploy it
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  # Auto-sync: ArgoCD applies changes automatically when Git changes
+  syncPolicy:
+    automated:
+      prune: true       # delete objects that are removed from Git
+      selfHeal: true    # re-sync if someone manually edits the cluster
+    syncOptions:
+      - CreateNamespace=true

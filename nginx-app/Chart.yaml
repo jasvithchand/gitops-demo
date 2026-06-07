@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nginx-app
+description: A simple nginx app to experiment with ArgoCD GitOps
+type: application
+version: 0.1.0
+appVersion: "1.27"

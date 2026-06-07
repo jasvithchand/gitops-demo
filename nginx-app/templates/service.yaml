@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-app-svc
+  namespace: default
+  labels:
+    app: nginx-app
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: nginx-app
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 80
+      protocol: TCP
