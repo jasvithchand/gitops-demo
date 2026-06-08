@@ -3,7 +3,7 @@
 # will trigger ArgoCD to sync the cluster.
 # -----------------------------------------------
 
-replicaCount: 5
+replicaCount: 1
 
 image:
   repository: nginx
