@@ -18,7 +18,7 @@ storage:
   size: 1Gi
   # storageClassName: "" means use the cluster default
   # Docker Desktop's default provisioner creates a hostPath volume on your Mac
-  storageClassName: ""
+  storageClassName: "hostpath"
 
 service:
   port: 5432
