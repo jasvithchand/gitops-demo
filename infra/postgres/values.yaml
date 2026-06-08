@@ -1,0 +1,36 @@
+# PostgreSQL configuration
+# Passwords are NOT stored here — they live in the SealedSecret
+# Edit these values and push to Git to reconfigure
+
+image:
+  repository: postgres
+  tag: "16.2-alpine"
+  pullPolicy: IfNotPresent
+
+# Single replica for local development
+# StatefulSets support scaling to multiple replicas for primary/replica setups
+# but that requires extra config (replication, etc) — single node is fine locally
+replicaCount: 1
+
+storage:
+  # How much disk space to give PostgreSQL
+  # Docker Desktop uses your Mac's disk — 1Gi is plenty for local dev
+  size: 1Gi
+  # storageClassName: "" means use the cluster default
+  # Docker Desktop's default provisioner creates a hostPath volume on your Mac
+  storageClassName: ""
+
+service:
+  port: 5432
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Name of the Secret that sealed-secrets-controller will create
+# Your pods reference this name to get the password
+secretName: postgres-secret

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: data
+  labels:
+    app: postgres
+spec:
+  # clusterIP: None makes this a headless service
+  # Instead of a VIP, CoreDNS creates individual DNS A records per pod:
+  #   postgres-0.postgres.data.svc.cluster.local -> pod IP directly
+  #
+  # Your services connect to PostgreSQL using this DNS name
+  # It never changes regardless of pod restarts or rescheduling
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 5432
+      name: postgres

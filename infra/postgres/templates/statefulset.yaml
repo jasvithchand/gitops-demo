@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: data
+  labels:
+    app: postgres
+spec:
+  # StatefulSets require a serviceName pointing at a headless service
+  # This is what enables stable DNS: postgres-0.postgres.data.svc.cluster.local
+  serviceName: postgres
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 5432
+              name: postgres
+          # Read credentials from the Secret that sealed-secrets-controller created
+          # These become plain environment variables inside the container
+          # PostgreSQL reads POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB on startup
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: POSTGRES_DB
+            # Tell PostgreSQL where to store its data files
+            # This path must match the volumeMount below
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # Mount the PersistentVolume at the path PostgreSQL expects
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+          # Liveness probe — is PostgreSQL process alive?
+          # Restarts the container if it fails 3 times
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - $(POSTGRES_USER)
+                - -d
+                - $(POSTGRES_DB)
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          # Readiness probe — is PostgreSQL ready to accept connections?
+          # Removes pod from Service endpoints if it fails
+          # Prevents traffic being sent to a pod that's still starting up
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - $(POSTGRES_USER)
+                - -d
+                - $(POSTGRES_DB)
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+  # volumeClaimTemplates is what makes StatefulSets special
+  # For each pod, Kubernetes automatically creates a PVC named:
+  #   postgres-data-postgres-0
+  #   postgres-data-postgres-1  (if you scale up)
+  # Each pod gets its own PVC bound to its own PV
+  # The PVC survives pod deletion — data persists across restarts
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          - ReadWriteOnce   # only one pod can mount this at a time (correct for a DB)
+        storageClassName: {{ .Values.storage.storageClassName | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.storage.size }}
