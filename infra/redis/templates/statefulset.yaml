@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: data
+  labels:
+    app: redis
+spec:
+  serviceName: redis
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Redis is configured entirely via command line arguments
+          # No separate config file needed for our use case
+          command:
+            - redis-server
+            - --save
+            - {{ .Values.config.save | quote }}
+            - --loglevel
+            - {{ .Values.config.loglevel | quote }}
+            - --maxmemory
+            - {{ .Values.config.maxmemory | quote }}
+            - --maxmemory-policy
+            - {{ .Values.config.maxmemoryPolicy | quote }}
+            - --dir
+            - /data              # where Redis writes its snapshot file (RDB)
+            - --dbfilename
+            - dump.rdb           # snapshot filename
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data   # Redis writes snapshots here — survives pod restarts
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+          # Liveness probe — is the Redis process alive and responding?
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          # Readiness probe — is Redis ready to accept commands?
+          # Pod won't receive traffic until this passes
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.storage.storageClassName | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.storage.size }}

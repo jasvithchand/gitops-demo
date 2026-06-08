@@ -1,0 +1,36 @@
+# Redis configuration
+# No password for local development — we'll add auth when moving to AWS ElastiCache
+
+image:
+  repository: redis
+  tag: "7.2-alpine"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+storage:
+  size: 512Mi
+  storageClassName: "hostpath"
+
+service:
+  port: 6379
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Redis configuration flags passed as command arguments
+# --save 60 1       = snapshot to disk every 60s if at least 1 key changed
+# --loglevel notice = sensible log verbosity
+# --maxmemory       = hard cap on memory usage
+# --maxmemory-policy allkeys-lru = when full, evict least recently used keys
+#                                  correct policy for a cache (LinkPulse use case)
+config:
+  save: "60 1"
+  loglevel: "notice"
+  maxmemory: "96mb"
+  maxmemoryPolicy: "allkeys-lru"

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: data
+  labels:
+    app: redis
+spec:
+  # Headless — same pattern as PostgreSQL
+  # DNS: redis-0.redis.data.svc.cluster.local -> pod IP directly
+  # Your services use this as REDIS_URL=redis://redis-0.redis.data.svc.cluster.local:6379
+  clusterIP: None
+  selector:
+    app: redis
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 6379
+      name: redis
