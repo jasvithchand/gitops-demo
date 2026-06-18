@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dashboard-service
+description: LinkPulse dashboard — static HTML served by nginx
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

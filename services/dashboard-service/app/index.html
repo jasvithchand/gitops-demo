@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkPulse</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+    .logo { font-size: 2.5rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.5rem; }
+    .tagline { color: #94a3b8; margin-bottom: 3rem; font-size: 1.1rem; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 2rem; width: 100%; max-width: 500px; margin-bottom: 2rem; }
+    .card h2 { font-size: 1rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    input { width: 100%; padding: 0.75rem 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem; margin-bottom: 1rem; outline: none; }
+    input:focus { border-color: #38bdf8; }
+    button { width: 100%; padding: 0.75rem; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    button:hover { background: #7dd3fc; }
+    .result { margin-top: 1rem; padding: 0.75rem 1rem; background: #0f172a; border-radius: 8px; font-family: monospace; color: #38bdf8; display: none; word-break: break-all; }
+    .services { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; width: 100%; max-width: 500px; }
+    .svc { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 1rem; text-align: center; }
+    .svc-name { font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem; }
+    .svc-status { font-size: 0.75rem; font-weight: 600; }
+    .ok { color: #4ade80; }
+    .checking { color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <div class="logo">⚡ LinkPulse</div>
+  <div class="tagline">URL shortener — built on Kubernetes</div>
+
+  <div class="card">
+    <h2>Shorten a URL</h2>
+    <input type="email" id="email" placeholder="email (jasvith@linkpulse.io)" value="jasvith@linkpulse.io">
+    <input type="password" id="password" placeholder="password (password123)" value="password123">
+    <input type="url" id="url" placeholder="https://example.com">
+    <button onclick="shorten()">Shorten</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <div class="services" id="services">
+    <div class="svc"><div class="svc-name">auth-service</div><div class="svc-status checking" id="auth-status">checking...</div></div>
+    <div class="svc"><div class="svc-name">shortener</div><div class="svc-status checking" id="shortener-status">checking...</div></div>
+    <div class="svc"><div class="svc-name">redirect</div><div class="svc-status checking" id="redirect-status">checking...</div></div>
+    <div class="svc"><div class="svc-name">analytics</div><div class="svc-status checking" id="analytics-status">checking...</div></div>
+  </div>
+
+  <script>
+    // In production Kong routes these calls — for now we call services directly via port-forward
+    const AUTH    = 'http://localhost:3001';
+    const SHORTENER = 'http://localhost:3002';
+
+    async function checkHealth(url, id) {
+      try {
+        const r = await fetch(url + '/health');
+        const d = await r.json();
+        document.getElementById(id).textContent = d.status === 'ok' ? '● online' : '● degraded';
+        document.getElementById(id).className = 'svc-status ' + (d.status === 'ok' ? 'ok' : 'checking');
+      } catch {
+        document.getElementById(id).textContent = '● offline';
+        document.getElementById(id).className = 'svc-status checking';
+      }
+    }
+
+    async function shorten() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const url = document.getElementById('url').value;
+      const result = document.getElementById('result');
+
+      if (!url) { result.style.display = 'block'; result.textContent = 'Enter a URL first'; return; }
+
+      try {
+        // Step 1: login to get JWT
+        const loginRes = await fetch(AUTH + '/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const { token } = await loginRes.json();
+
+        // Step 2: create short link
+        const linkRes = await fetch(SHORTENER + '/links', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ url })
+        });
+        const link = await linkRes.json();
+
+        result.style.display = 'block';
+        result.textContent = link.short_url || JSON.stringify(link);
+      } catch (e) {
+        result.style.display = 'block';
+        result.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    // Check health of all services on load
+    checkHealth(AUTH, 'auth-status');
+    checkHealth(SHORTENER, 'shortener-status');
+    setInterval(() => {
+      checkHealth(AUTH, 'auth-status');
+      checkHealth(SHORTENER, 'shortener-status');
+    }, 10000);
+  </script>
+</body>
+</html>

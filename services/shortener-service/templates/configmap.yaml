@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shortener-service-config
+  namespace: services
+data:
+  REDIS_URL: {{ .Values.config.redisUrl | quote }}
+  AUTH_SERVICE_URL: {{ .Values.config.authServiceUrl | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}

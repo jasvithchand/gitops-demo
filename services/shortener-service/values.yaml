@@ -1,0 +1,19 @@
+replicaCount: 1
+image:
+  repository: ghcr.io/jasvithchand/shortener-service
+  tag: "latest"
+  pullPolicy: Always
+service:
+  port: 3002
+config:
+  port: "3002"
+  nodeEnv: "production"
+  redisUrl: "redis://redis-0.redis.data.svc.cluster.local:6379"
+  authServiceUrl: "http://auth-service.services.svc.cluster.local:3001"
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

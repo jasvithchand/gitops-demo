@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: services
+  labels:
+    app: auth-service
+spec:
+  # Regular ClusterIP — not headless
+  # shortener-service calls auth-service.services.svc.cluster.local:3001
+  # Load balances if we ever scale auth-service to multiple replicas
+  selector:
+    app: auth-service
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 3001
+      name: http

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redirect-service-config
+  namespace: services
+data:
+  REDIS_URL: {{ .Values.config.redisUrl | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}

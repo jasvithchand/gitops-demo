@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/jasvithchand/auth-service
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  port: 3001
+
+config:
+  port: "3001"
+  nodeEnv: "production"
+
+# Name of the SealedSecret that contains JWT_PRIVATE_KEY and JWT_PUBLIC_KEY
+secretName: jwt-secret
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
