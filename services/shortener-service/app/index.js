@@ -115,3 +115,7 @@ app.get('/links/:code', async (req, res) => {
     res.status(500).json({ error: 'internal error' });
   }
 });
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[${SERVICE_NAME}] running on :${PORT}`);
+});
