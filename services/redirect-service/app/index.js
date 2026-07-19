@@ -81,5 +81,5 @@ app.get('/:code', async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[${SERVICE_NAME}] running on :${PORT}`);
+  console.log(`[${SERVICE_NAME}] HTTP server listening on :${PORT}`);
 });
